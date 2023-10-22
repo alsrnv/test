@@ -15,7 +15,10 @@ def analyze_sensors(df):
         observed_values = observed_freq.values
         
         # Проверка распределения Пуассона
-        expected_poisson = np.array([poisson.pmf(int(x), mean_value) * len(df_sensor) for x in unique_values])
+        expected_poisson = np.array([poisson.pmf(int(x), mean_value) for x in unique_values]) * len(df_sensor)
+        
+        # Нормализация частот
+        observed_values = observed_values / np.sum(observed_values) * np.sum(expected_poisson)
         
         # Убедимся, что размеры совпадают
         if len(observed_values) != len(expected_poisson):
@@ -25,7 +28,11 @@ def analyze_sensors(df):
         chi2_poisson, p_poisson = chisquare(f_obs=observed_values, f_exp=expected_poisson)
         
         # Проверка нормального распределения
-        expected_norm = np.array([norm.pdf(x, mean_value, std_value) * len(df_sensor) for x in unique_values])
+        expected_norm = np.array([norm.pdf(x, mean_value, std_value) for x in unique_values]) * len(df_sensor)
+        
+        # Нормализация частот
+        expected_norm = expected_norm / np.sum(expected_norm) * np.sum(observed_values)
+        
         chi2_norm, p_norm = chisquare(f_obs=observed_values, f_exp=expected_norm)
         
         # Определение типа распределения
