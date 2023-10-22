@@ -18,7 +18,7 @@ plt.show()
 # Шаг 3: Хи-квадрат тест
 observed_values = df_sensor['metric_value'].value_counts().sort_index().values
 mean_value = np.mean(df_sensor['metric_value'])
-expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in range(min(df_sensor['metric_value']), max(df_sensor['metric_value']) + 1)]
+expected_values = [np.exp(-mean_value) * mean_value**int(x) / np.math.factorial(int(x)) * len(df_sensor) for x in np.arange(int(min(df_sensor['metric_value'])), int(max(df_sensor['metric_value']) + 1))]
 
 chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
 
