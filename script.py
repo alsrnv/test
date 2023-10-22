@@ -20,14 +20,16 @@ observed_values = df_sensor['metric_value'].value_counts().sort_index().values
 mean_value = np.mean(df_sensor['metric_value'])
 
 # Убедимся, что размеры массивов совпадают
-expected_values = [np.exp(-mean_value) * mean_value**int(x) / np.math.factorial(int(x)) * len(df_sensor) for x in np.arange(int(min(df_sensor['metric_value'])), int(max(df_sensor['metric_value']) + 1))]
+min_val = int(min(df_sensor['metric_value']))
+max_val = int(max(df_sensor['metric_value']))
+
+expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in range(min_val, max_val + 1)]
 
 if len(observed_values) == len(expected_values):
     chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
-
     if p_value > 0.05:
         print('The distribution seems to follow the expected distribution.')
     else:
         print('The distribution does not seem to follow the expected distribution.')
 else:
-    print("The lengths of observed and expected values do not match. Cannot perform chi-square test.")
+    print(f"The lengths of observed and expected values do not match. Observed: {len(observed_values)}, Expected: {len(expected_values)}. Cannot perform chi-square test.")
