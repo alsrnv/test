@@ -24,7 +24,7 @@ mean_value = np.mean(df_sensor['metric_value'])
 
 # Убедимся, что размеры массивов совпадают
 unique_values = df_sensor['metric_value'].unique()
-expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in unique_values]
+expected_values = [np.exp(-mean_value) * mean_value**int(x) / np.math.factorial(int(x)) * len(df_sensor) for x in unique_values]
 
 if len(observed_values) == len(expected_values):
     chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
