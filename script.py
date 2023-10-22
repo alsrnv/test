@@ -10,13 +10,24 @@ def analyze_sensors(df):
         std_value = np.std(df_sensor['metric_value'])
         
         # Проверка распределения Пуассона
-        unique_values = df_sensor['metric_value'].unique()
+        observed_values = df_sensor['metric_value'].value_counts().sort_index()
+        unique_values = observed_values.index
         expected_poisson = [poisson.pmf(int(x), mean_value) * len(df_sensor) for x in unique_values]
-        observed_values = df_sensor['metric_value'].value_counts().sort_index().values
+        
+        # Нормализация ожидаемых и наблюдаемых значений
+        sum_observed = np.sum(observed_values)
+        sum_expected_poisson = np.sum(expected_poisson)
+        observed_values = observed_values * (sum_expected_poisson / sum_observed)
+        
         chi2_poisson, p_poisson = chisquare(f_obs=observed_values, f_exp=expected_poisson)
         
         # Проверка нормального распределения
         expected_norm = [norm.pdf(x, mean_value, std_value) * len(df_sensor) for x in unique_values]
+        
+        # Нормализация ожидаемых значений
+        sum_expected_norm = np.sum(expected_norm)
+        expected_norm = expected_norm * (sum_observed / sum_expected_norm)
+        
         chi2_norm, p_norm = chisquare(f_obs=observed_values, f_exp=expected_norm)
         
         # Определение типа распределения
