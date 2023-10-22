@@ -5,8 +5,11 @@ from scipy.stats import chisquare
 
 # Предположим, что df - это ваш исходный DataFrame с колонками 'timestamp', 'metric_value', и 'sensor_name'
 
-# Шаг 1: Фильтрация данных для одного из sensor_name, например, 'Sensor_1'
-df_sensor = df[df['sensor_name'] == 'Sensor_1']
+# Указываем имя датчика, который хотим тестировать
+test_sensor_name = 'Sensor_1'
+
+# Шаг 1: Фильтрация данных для выбранного sensor_name
+df_sensor = df[df['sensor_name'] == test_sensor_name]
 
 # Шаг 2: Визуализация распределения данных
 plt.hist(df_sensor['metric_value'], bins=20, density=True)
@@ -20,10 +23,8 @@ observed_values = df_sensor['metric_value'].value_counts().sort_index().values
 mean_value = np.mean(df_sensor['metric_value'])
 
 # Убедимся, что размеры массивов совпадают
-min_val = int(min(df_sensor['metric_value']))
-max_val = int(max(df_sensor['metric_value']))
-
-expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in range(min_val, max_val + 1)]
+unique_values = df_sensor['metric_value'].unique()
+expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in unique_values]
 
 if len(observed_values) == len(expected_values):
     chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
