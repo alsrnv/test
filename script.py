@@ -1,29 +1,28 @@
 import pandas as pd
-from fbprophet import Prophet
+import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import chisquare
 
 # Предположим, что df - это ваш исходный DataFrame с колонками 'timestamp', 'metric_value', и 'sensor_name'
 
 # Шаг 1: Фильтрация данных для одного из sensor_name, например, 'Sensor_1'
 df_sensor = df[df['sensor_name'] == 'Sensor_1']
 
-# Шаг 2: Подготовка данных для Prophet
-df_prophet = df_sensor.rename(columns={'timestamp': 'ds', 'metric_value': 'y'})
-
-# Шаг 3: Инициализация и обучение модели
-model = Prophet()
-model.fit(df_prophet)
-
-# Шаг 4: Прогнозирование
-future = model.make_future_dataframe(periods=0)
-forecast = model.predict(future)
-
-# Определение выбросов
-forecast['anomaly'] = 0
-forecast.loc[forecast['yhat_lower'] > df_prophet['y'].reset_index(drop=True), 'anomaly'] = -1  # Ниже нижнего предела
-forecast.loc[forecast['yhat_upper'] < df_prophet['y'].reset_index(drop=True), 'anomaly'] = 1   # Выше верхнего предела
-
-# Визуализация результатов
-fig = model.plot(forecast)
-plt.title('Time Series with Anomalies')
+# Шаг 2: Визуализация распределения данных
+plt.hist(df_sensor['metric_value'], bins=20, density=True)
+plt.title('Histogram of Metric Values')
+plt.xlabel('Metric Value')
+plt.ylabel('Frequency')
 plt.show()
+
+# Шаг 3: Хи-квадрат тест
+observed_values = df_sensor['metric_value'].value_counts().sort_index().values
+mean_value = np.mean(df_sensor['metric_value'])
+expected_values = [np.exp(-mean_value) * mean_value**x / np.math.factorial(x) * len(df_sensor) for x in range(min(df_sensor['metric_value']), max(df_sensor['metric_value']) + 1)]
+
+chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
+
+if p_value > 0.05:
+    print('The distribution seems to follow the expected distribution.')
+else:
+    print('The distribution does not seem to follow the expected distribution.')
