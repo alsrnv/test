@@ -1,15 +1,5 @@
-# Генерация временного ряда для нескольких датчиков
-sensor_names = ['Sensor_1', 'Sensor_2', 'Sensor_3']
-timestamps = pd.date_range(start='2021-01-01', end='2021-01-31', freq='D')
-data = []
-
-for sensor in sensor_names:
-    metric_values = np.random.poisson(lam=10, size=len(timestamps))
-    for t, value in zip(timestamps, metric_values):
-        data.append([t, value, sensor])
-
-# Создание DataFrame
-df = pd.DataFrame(data, columns=['timestamp', 'metric_value', 'sensor_name'])
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Построение графика с использованием Seaborn
 plt.figure(figsize=(12, 6))
