@@ -1,36 +1,45 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import chisquare
+from scipy.stats import chisquare, poisson, norm
 
-# Предположим, что df - это ваш исходный DataFrame с колонками 'timestamp', 'metric_value', и 'sensor_name'
+def analyze_sensors(df):
+    results = {}
+    sensor_names = df['sensor_name'].unique()
+    
+    for sensor in sensor_names:
+        df_sensor = df[df['sensor_name'] == sensor]
+        mean_value = np.mean(df_sensor['metric_value'])
+        std_value = np.std(df_sensor['metric_value'])
+        
+        # Проверка распределения Пуассона
+        unique_values = df_sensor['metric_value'].unique()
+        expected_poisson = [poisson.pmf(int(x), mean_value) * len(df_sensor) for x in unique_values]
+        observed_values = df_sensor['metric_value'].value_counts().sort_index().values
+        chi2_poisson, p_poisson = chisquare(f_obs=observed_values, f_exp=expected_poisson)
+        
+        # Проверка нормального распределения
+        expected_norm = [norm.pdf(x, mean_value, std_value) * len(df_sensor) for x in unique_values]
+        chi2_norm, p_norm = chisquare(f_obs=observed_values, f_exp=expected_norm)
+        
+        # Определение типа распределения
+        distribution = "Unknown"
+        if p_poisson > 0.05:
+            distribution = "Poisson"
+        elif p_norm > 0.05:
+            distribution = "Gaussian"
+        
+        # Проверка на аномалии (здесь используется простой Z-тест)
+        z_scores = np.abs((df_sensor['metric_value'] - mean_value) / std_value)
+        anomalies = np.where(z_scores > 2)[0]
+        
+        results[sensor] = {
+            'Distribution': distribution,
+            'Anomalies': len(anomalies) > 0
+        }
+        
+    return results
 
-# Указываем имя датчика, который хотим тестировать
-test_sensor_name = 'Sensor_1'
+# Предположим, что df - это ваш DataFrame
+# df = ...
 
-# Шаг 1: Фильтрация данных для выбранного sensor_name
-df_sensor = df[df['sensor_name'] == test_sensor_name]
-
-# Шаг 2: Визуализация распределения данных
-plt.hist(df_sensor['metric_value'], bins=20, density=True)
-plt.title('Histogram of Metric Values')
-plt.xlabel('Metric Value')
-plt.ylabel('Frequency')
-plt.show()
-
-# Шаг 3: Хи-квадрат тест
-observed_values = df_sensor['metric_value'].value_counts().sort_index().values
-mean_value = np.mean(df_sensor['metric_value'])
-
-# Убедимся, что размеры массивов совпадают
-unique_values = df_sensor['metric_value'].unique()
-expected_values = [np.exp(-mean_value) * mean_value**int(x) / np.math.factorial(int(x)) * len(df_sensor) for x in unique_values]
-
-if len(observed_values) == len(expected_values):
-    chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
-    if p_value > 0.05:
-        print('The distribution seems to follow the expected distribution.')
-    else:
-        print('The distribution does not seem to follow the expected distribution.')
-else:
-    print(f"The lengths of observed and expected values do not match. Observed: {len(observed_values)}, Expected: {len(expected_values)}. Cannot perform chi-square test.")
+# Применение функции
+results = analyze_sensors(df)
+print(results)
