@@ -18,11 +18,16 @@ plt.show()
 # Шаг 3: Хи-квадрат тест
 observed_values = df_sensor['metric_value'].value_counts().sort_index().values
 mean_value = np.mean(df_sensor['metric_value'])
+
+# Убедимся, что размеры массивов совпадают
 expected_values = [np.exp(-mean_value) * mean_value**int(x) / np.math.factorial(int(x)) * len(df_sensor) for x in np.arange(int(min(df_sensor['metric_value'])), int(max(df_sensor['metric_value']) + 1))]
 
-chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
+if len(observed_values) == len(expected_values):
+    chi2_stat, p_value = chisquare(f_obs=observed_values, f_exp=expected_values)
 
-if p_value > 0.05:
-    print('The distribution seems to follow the expected distribution.')
+    if p_value > 0.05:
+        print('The distribution seems to follow the expected distribution.')
+    else:
+        print('The distribution does not seem to follow the expected distribution.')
 else:
-    print('The distribution does not seem to follow the expected distribution.')
+    print("The lengths of observed and expected values do not match. Cannot perform chi-square test.")
