@@ -1,4 +1,5 @@
 from scipy.stats import chisquare, poisson, norm
+import numpy as np
 
 def analyze_sensors(df):
     results = {}
@@ -9,25 +10,15 @@ def analyze_sensors(df):
         mean_value = np.mean(df_sensor['metric_value'])
         std_value = np.std(df_sensor['metric_value'])
         
+        observed_values = df_sensor['metric_value'].value_counts().sort_index().values
+        unique_values = df_sensor['metric_value'].unique()
+        
         # Проверка распределения Пуассона
-        observed_values = df_sensor['metric_value'].value_counts().sort_index()
-        unique_values = observed_values.index
-        expected_poisson = [poisson.pmf(int(x), mean_value) * len(df_sensor) for x in unique_values]
-        
-        # Нормализация ожидаемых и наблюдаемых значений
-        sum_observed = np.sum(observed_values)
-        sum_expected_poisson = np.sum(expected_poisson)
-        observed_values = observed_values * (sum_expected_poisson / sum_observed)
-        
+        expected_poisson = np.array([poisson.pmf(int(x), mean_value) for x in unique_values]) * len(df_sensor)
         chi2_poisson, p_poisson = chisquare(f_obs=observed_values, f_exp=expected_poisson)
         
         # Проверка нормального распределения
-        expected_norm = [norm.pdf(x, mean_value, std_value) * len(df_sensor) for x in unique_values]
-        
-        # Нормализация ожидаемых значений
-        sum_expected_norm = np.sum(expected_norm)
-        expected_norm = expected_norm * (sum_observed / sum_expected_norm)
-        
+        expected_norm = np.array([norm.pdf(x, mean_value, std_value) for x in unique_values]) * len(df_sensor)
         chi2_norm, p_norm = chisquare(f_obs=observed_values, f_exp=expected_norm)
         
         # Определение типа распределения
@@ -37,7 +28,7 @@ def analyze_sensors(df):
         elif p_norm > 0.05:
             distribution = "Gaussian"
         
-        # Проверка на аномалии (здесь используется простой Z-тест)
+        # Проверка на аномалии (Z-тест)
         z_scores = np.abs((df_sensor['metric_value'] - mean_value) / std_value)
         anomalies = np.where(z_scores > 2)[0]
         
